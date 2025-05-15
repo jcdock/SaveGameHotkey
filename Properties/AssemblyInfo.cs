@@ -6,7 +6,7 @@ using MelonLoader;
 using SaveGameHotkey;
 
 
-[assembly: MelonInfo(typeof(SaveGameHotkey.SaveGameHotkey), "SaveGameHotkey", "1.0.0", "Jc Dock")]
+[assembly: MelonInfo(typeof(SaveGameHotkey.SaveGameHotkey), "SaveGameHotkey", "1.1.0", "Jc Dock")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 

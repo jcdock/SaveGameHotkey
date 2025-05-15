@@ -3,6 +3,7 @@ using MelonLoader;
 using UnityEngine;
 using Il2CppScheduleOne.Persistence;
 using ModManagerPhoneApp;
+using System.Runtime.InteropServices;
 
 
 namespace SaveGameHotkey
@@ -13,13 +14,28 @@ namespace SaveGameHotkey
         public override void OnInitializeMelon()
         {
            SaveGameHotkey.Category = MelonPreferences.CreateCategory("SaveGameHotkey_Main", "Save Game Hotkey Settings");
-           SaveGameHotkey.Keybind = SaveGameHotkey.Category.CreateEntry<string>("Keybind", "F8", "Keybind to Save the Game.",null,false,false,null,null);
+            SaveGameHotkey.Keybind = SaveGameHotkey.Category.CreateEntry<KeyCode>("Keybind", KeyCode.F8, "Keybind to Save the Game.",null,false,false,null,null);
+           SaveGameHotkey.CrtlModifier = SaveGameHotkey.Category.CreateEntry<bool>("CrtlModifier", false, "Use Ctrl as a modifier key.", null, false, false, null, null);
+           SaveGameHotkey.ShiftModifier = SaveGameHotkey.Category.CreateEntry<bool>("ShiftModifier", false, "Use Shift as a modifier key.", null, false, false, null, null);
+           SaveGameHotkey.AltModifier = SaveGameHotkey.Category.CreateEntry<bool>("AltModifier", false, "Use Alt as a modifier key.", null, false, false, null, null);
 
-           
+            
 
-           SubscribeToModManagerEvents();
+            SubscribeToModManagerEvents();
 
-           LoggerInstance.Msg(base.Info.Name +  " v" + base.Info.Version + " Initialized! Hotkey: " + SaveGameHotkey.Keybind.Value);
+           LoggerInstance.Msg(base.Info.Name +  " v" + base.Info.Version + " Initialized!");
+        }
+
+        public override void OnSceneWasInitialized(int buildIndex, string sceneName)
+        {
+            //var _keybind = SaveGameHotkey.Keybind.Value;
+            //var isKeyValid = IsKeyBindValid(_keybind);
+            //if (!isKeyValid)
+            //{
+            //    LoggerInstance.Error($"Keybind not set or is set to invalid key. Defaulting to F8.");
+            //    SaveGameHotkey.Keybind.Value = "F8";
+            //}
+
         }
 
         public override void OnDeinitializeMelon()
@@ -30,25 +46,76 @@ namespace SaveGameHotkey
         public override void OnUpdate()
         {
 
-            if (Input.GetKeyDown(this.ParseKeybind(SaveGameHotkey.Keybind.Value)))
-            {
-                var SaveManager = GameObject.FindObjectOfType<SaveManager>();
-                if (SaveManager != null)
+                var crtlModifier = SaveGameHotkey.CrtlModifier.Value;
+                var shiftModifier = SaveGameHotkey.ShiftModifier.Value;
+                var altModifier = SaveGameHotkey.AltModifier.Value;
+
+                if (crtlModifier && shiftModifier && altModifier)
                 {
-                    SaveManager.Save();
-                    LoggerInstance.Msg("Game Saved");
-                }
-                else
+                    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                } else if (crtlModifier && shiftModifier)
                 {
-                    LoggerInstance.Error("SaveManager not found!");
+                    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
                 }
-
-
-
+                else if (crtlModifier && altModifier)
+                {
+                    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                }
+                else if (shiftModifier && altModifier)
+                {
+                    if (Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                }
+                else if (crtlModifier)
+                {
+                    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                }
+                else if (shiftModifier)
+                {
+                    if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                }
+                else if (altModifier)
+                {
+                    if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown((SaveGameHotkey.Keybind.Value)))
+                    {
+                        SaveGame();
+                    }
+                }
             }  
+      
+
+        private void SaveGame()
+        {
+            var SaveManager = GameObject.FindObjectOfType<SaveManager>();
+            if (SaveManager != null)
+            {
+                SaveManager.Save();
+                LoggerInstance.Msg("Game Saved");
+            }
+            else
+            {
+                LoggerInstance.Error("SaveManager not found!");
+            }
         }
 
-       private KeyCode ParseKeybind(string keybind)
+        private KeyCode ParseKeybind(string keybind)
         {
             KeyCode keyCode;
             bool flag = Enum.TryParse<KeyCode>(keybind, out keyCode);
@@ -96,22 +163,33 @@ namespace SaveGameHotkey
             }
         }
 
+        private bool IsKeyBindValid(string keybind)
+        {
+            bool flag = Enum.TryParse<KeyCode>(keybind, out KeyCode keyCode);
+            return flag;
+        }
+
         private void HandleSettingsUpdate() // Can be static if it only accesses static fields/methods
         {
         
-            LoggerInstance.Msg("Mod Manager saved preferences. Reloading settings...");
             try
             {
-                SaveGameHotkey.Keybind = SaveGameHotkey.Category.GetEntry<string>("Keybind");
+                SaveGameHotkey.Keybind = SaveGameHotkey.Category.GetEntry<KeyCode>("Keybind");
+                SaveGameHotkey.CrtlModifier = SaveGameHotkey.Category.GetEntry<bool>("CrtlModifier");
+                SaveGameHotkey.ShiftModifier = SaveGameHotkey.Category.GetEntry<bool>("ShiftModifier");
+                SaveGameHotkey.AltModifier = SaveGameHotkey.Category.GetEntry<bool>("AltModifier");
 
-                LoggerInstance.Msg("Settings reloaded successfully.");
+               
             }
             catch (System.Exception ex) { LoggerInstance.Error($"Error applying updated settings after save: {ex}"); }
         }
 
         private static MelonPreferences_Category Category;
-        private static MelonPreferences_Entry<string> Keybind;
-
+        private static MelonPreferences_Entry<KeyCode> Keybind;
+        private static MelonPreferences_Entry<bool> CrtlModifier;
+        private static MelonPreferences_Entry<bool> ShiftModifier;
+        private static MelonPreferences_Entry<bool> AltModifier;
+        private static MelonPreferences_Entry<KeyCode> key;
 
     }
 }
